@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %} Home {% endblock title %}
+{% block aboutactive %} active {% endblock aboutactive %}
+
+{% block body %}
+<div class="container my-4">
+    <!-- d-flex means display:flex -->
+    <div class="row featurette d-flex justify-content-center align-items-center">
+        <div class="col-md-7">
+            <h2 class="featurette-heading">It all start with v/Code Idea. <span class="text-muted">It’ll blow your
+                    mind.</span></h2>
+            <p class="lead">Some great placeholder content for the first featurette here. Imagine some exciting
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Doloremque reprehenderit aut ducimus sint?
+                prose here.</p>
+        </div>
+        <div class="col-md-5">
+            <img class="bd-placeholder-img bd-placeholder-img-lg featurette-image img-fluid mx-auto"
+                class="img-fluid" src="/static/aboutimg/1.jpg" alt="">
+        </div>
+    </div>
+    <div class="row featurette d-flex justify-content-center align-items-center">
+        <div class="col-md-7 order-md-2 ">
+            <h2 class="featurette-heading">We started v/Code in 2021. <span class="text-muted">It’ll blow your
+                    mind.</span></h2>
+            <p class="lead">Some great placeholder content for the first featurette here. Imagine some exciting
+                prose here. Lorem ipsum dolor sit amet, consectetur adipisicing elit. Hic temporibus velit quas?</p>
+        </div>
+        <div class="col-md-5 order-md-1">
+            <img class="bd-placeholder-img bd-placeholder-img-lg featurette-image img-fluid mx-auto"
+                class="img-fluid" src="/static/aboutimg/2.jpg" alt="">
+
+        </div>
+    </div>
+    <div class="row featurette d-flex justify-content-center align-items-center">
+        <div class="col-md-7">
+            <h2 class="featurette-heading">What are our Objective? <span class="text-muted">It’ll blow your
+                    mind.</span></h2>
+            <p class="lead">Some great placeholder content for the first featurette here. Imagine some excitingprose
+                here. Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ipsa totam adipisci inventore.</p>
+        </div>
+        <div class="col-md-5">
+            <img class="bd-placeholder-img bd-placeholder-img-lg featurette-image img-fluid mx-auto"
+                class="img-fluid" src="/static/aboutimg/3.jpg" alt="">
+        </div>
+    </div>
+</div>
+
+{% endblock body %}

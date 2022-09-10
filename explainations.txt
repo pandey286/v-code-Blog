@@ -1,0 +1,208 @@
+blog ==> models.py
+------------------------
+
+class BlogComment(models.Model):
+    sno = models.AutoField(primary_key=True)
+    comment = models.TextField()
+    user = models.ForeignKey(User, on_delete=models.CASCADE) 
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True)
+    timestamp = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return self.comment[0:13] +"..."+ "by" + self.user.username
+
+==============================================================================================
+
+We add a parent field in BlogComment,and said that if we have Blog Comment in our parent field
+and if it's not "null" then that comment have a parent(parent kiska hota hai jo kudh ek bacha 
+hai means reply)
+So we have given the foreign key of parent to reply
+
+==============================================================================================
+
+blog ==> views.py
+-----------------------
+
+def blogPost(request, slug):
+    post = Post.objects.filter(slug=slug).first()
+    comments = BlogComment.objects.filter(post=post, parent=None) # give as all comment assosicated with that specific post who parent are none(joki first cooment hai)
+    replies = BlogComment.objects.filter(post=post).exclude(parent=None) # give as all the reply comment excluding the actual comment i.e is the comment we are replying to
+    replyDict={} # for all reply create a dict  
+    for reply in replies:
+        if reply.parent.sno not in replyDict.keys(): 		# if reply dict sno is not in reply dict key then make reply dict a list and put reply in it 
+            replyDict[reply.parent.sno] = [reply] 		# o/p {4: [<BlogComment: hi...byadmin>], 5: [<BlogComment: thank u...byadmin>]}
+        else:                              			# if their is already a reply then add another reply i.e is the current reply        
+            replyDict[reply.parent.sno].append(reply)		# key will be comment ka sno and jo value hai woh hona wala hai list of reply
+
+    print(replyDict)
+    # print(comments,replies )
+
+    context = {'post': post, 'comments':comments, 'user':request.user, 'replyDict':replyDict}
+    return render(request, 'blog/blogPost.html', context)
+
+def postComment(request):
+    if request.method=='POST':
+        comment = request.POST.get("comment")
+        user = request.user
+        postSno = request.POST.get("postSno")
+        post = Post.objects.get(sno=postSno)
+        parentSno =  request.POST.get("parentSno")
+        
+        if parentSno == "":
+            comment = BlogComment(comment=comment, user=user, post=post)
+            comment.save()
+            messages.success(request, "Your Comment has been add successfully")
+        else:
+            parent = BlogComment.objects.get(sno=parentSno)
+            comment = BlogComment(comment=comment, user=user, post=post,parent=parent)
+            comment.save()
+            messages.success(request, "Your reply has been add successfully")
+    return redirect(f"/blog/{post.slug}") # here f means refresh the page
+
+====================================================================================================
+
+blogPost.html
+-----------------------------
+
+.
+.
+.
+.
+
+<div class="replies bg-danger my-2">
+    {% for reply in replyDict|get_val:comment.sno %} <!--  "get_val" is custom template filter -->
+        {{reply}}
+          <br>
+    {% endfor %}
+</div>
+.
+.
+ what was the problem?
+
+in our dict we were not able to access the item of replydict.
+replydict ka comment.sno usa key ki kya corresponding value woh chaheiya tha or jo list hai reply ki usko ilterate karna tha
+so, we make custom filter("how to make custom templatetags in django")
+
+how we make custom templatetags ?
+
+ans: 1) make a folder templatetags in blog,app
+     2) we make two files "__init__.py" (just to declare ki ek packages hai); extras.py
+     3) extras.py
+
+	from atexit import register
+	from django import template
+
+	register = template.Library()
+	
+	# gel_val is a decorater
+	@register.filter(name='get_val')
+	def get_val(dict, key):
+	    return dict.get(key)	
+
+------------------------
+
+i want to give my post html styling so i use paragraph and heading tags in admin panel like 
+this" <h2>this is new posts</h2><p>this is a paragraph </p> " but it does not work why? and
+what does django do with that tags we pass?
+
+ans:- So django put &lt;h2&gt; and &lt;/h2&gt; , this are put by dajango to protect 
+us from hacking from "xss attack"
+
+examples
+&lt;h2&gt;this is new posts&lt;/h2&gt;
+&lt;p&gt;this is a paragraph &lt;/p&gt;
+
+&lt;h2&gt;this is another new posts&lt;/h2&gt;
+&lt;p&gt;this is a another paragraph &lt;/p&gt;
+*************************************************************************
+escape¶
+Escapes a string’s HTML. Specifically, it makes these replacements:
+
+< is converted to &lt;
+> is converted to &gt;
+' (single quote) is converted to &#x27;
+" (double quote) is converted to &quot;
+& is converted to &amp;
+Applying escape to a variable that would normally have auto-escaping 
+applied to the result will only result in one round of escaping being done. 
+So it is safe to use this function even in auto-escaping environments. 
+If you want multiple escaping passes to be applied, use the force_escape filter.
+
+For example, you can apply escape to fields when autoescape is off:
+
+{% autoescape off %}
+    {{ title|escape }}
+{% endautoescape %}
+-----------------------------------------------------------------
+What is XSS attack ?
+
+Cross-site scripting
+In this section, we'll explain what cross-site scripting is, describe the different 
+varieties of cross-site scripting vulnerabilities, and spell out how to find and prevent
+ cross-site scripting.
+
+What is cross-site scripting (XSS)?
+Cross-site scripting (also known as XSS) is a web security vulnerability that allows an 
+attacker to compromise the interactions that users have with a vulnerable application. 
+It allows an attacker to circumvent the same origin policy, which is designed to segregate
+ different websites from each other. Cross-site scripting vulnerabilities normally allow 
+an attacker to masquerade as a victim user, to carry out any actions that the user is able
+ to perform, and to access any of the user's data. If the victim user has privileged access
+ within the application, then the attacker might be able to gain full control over all of
+ the application's functionality and data.
+
+How does XSS work?
+Cross-site scripting works by manipulating a vulnerable web site so that it returns
+ malicious JavaScript to users. When the malicious code executes inside a victim's browser, 
+the attacker can fully compromise their interaction with the application.
+
+What can XSS be used for?
+An attacker who exploits a cross-site scripting vulnerability is typically able to:
+
+Impersonate or masquerade as the victim user.
+Carry out any action that the user is able to perform.
+Read any data that the user is able to access.
+Capture the user's login credentials.
+Perform virtual defacement of the web site.
+Inject trojan functionality into the web site.
+Impact of XSS vulnerabilities
+The actual impact of an XSS attack generally depends on the nature of the application,
+ its functionality and data, and the status of the compromised user. For example:
+
+In a brochureware application, where all users are anonymous and all information is public, 
+the impact will often be minimal.
+In an application holding sensitive data, such as banking transactions, emails, or healthcare 
+records, the impact will usually be serious.
+If the compromised user has elevated privileges within the application, then the impact will 
+generally be critical, allowing the attacker to take full control of the vulnerable application
+and compromise all users and their data.
+
+=====================================================================================================
+
+1) why are we using rich text editor ?
+
+Because if we send our blog to someone to write and he/she does not no html then their will be problem
+to solve this problem we use rich text editor. RTE will generate HTML behind the seen.
+
+2) Using a Rich TextEditor ?
+
+TinyMce is a rich TextEditor, An online rich-text editor is the interface for editing rich text within web
+ browsers, which presents the user with a "what-you-see-is-what-you-get" (WYSIWYG) editing area. The aim is 
+to reduce the effort for users trying to express their formatting directly as valid HTML markup.
+
+Though very early browsers could display rich text, user data entry was limited to text boxes with a single 
+font and style (implemented with the <textarea> HTML element). Internet Explorer was the first to add a special
+ "designMode" which allowed formatted parts of a document to be edited by the user using a cursor. Mozilla 
+followed suit in version 1.3,[1] and most major browsers now implement this informal standard in some capacity.[2]
+
+The technical capabilities needed to implement an online rich text editor were not covered by the W3C 
+specifications for HTML4. Nevertheless, popular services like Gmail and WordPress have relied on rich text
+ editing as their main user interface. With HTML5, some standardization was made on a DOM property called "
+contentEditable"—which resembles Internet Explorer's original extension.[3] Many of the online office suites
+ tend to provide online text editing and formatting functionality.
+
+3) how to get tinymce html ?
+
+In google text editor => console type "tinyMCE.get('mytextarea').getContent();
+"

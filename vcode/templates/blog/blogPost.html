@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %} BlogPost {% endblock title %}
+{% block blogactive %} active {% endblock blogactive %}
+{% block body %}
+{% load humanize %}
+{% load extras %}
+
+<div class="container my-3">
+  <h1 class="blog-post-title">{{post.title}}</h1>
+  <p class="blog-post-meta">{{post.Timestamp}} by <a href="/about">{{post.author}}</a> (<span>{{post.views}} views</span>)</p>
+ 
+  <p>{{post.content|safe}}</p>
+  <hr>
+</div>
+<div class="container">
+  {% comment %} search for queryset count in django template {% endcomment %}
+  <h2>Comment ({{comments.count}})</h2>
+  <div class="my-2">
+    {% if user.is_authenticated %}
+    <form action="/blog/postComment" method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="exampleInputEmail1">Post Comment</label>
+        <input type="text" class="form-control" name="comment" placeholder="Add your comment">
+      </div>
+      <input type="hidden" name="postSno" value="{{post.sno}}">
+      <input type="hidden" name="parentSno" value="">
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+    {% else %}
+    <span><b>Please login to post a comment</b></span>
+    {% endif %}
+  </div>
+
+  {% for comment in comments %}
+  <div class="row my-3">
+    <div class="col-md-1 ">
+      <img class=" mx-auto d-block w-100 p-2" src="/static/img/user.png" alt="user">
+    </div>
+    <div class="col-md-11">
+      <b>{{comment.user.username}}</b> <span class="badge badge-secondary" style="font-size: 14px;"> {{comment.timestamp  | naturaltime}} </span>
+      <div> {{comment.comment}}</div>
+      <div class="reply mx-0">
+        {% if user.is_authenticated %}
+        <button class="btn btn-primary btn-sm mt-2" type="button" data-toggle="collapse"
+          data-target="#replyBox{{comment.sno}}" aria-expanded="false" aria-controls="replyBox{{comment.sno}}"> Reply
+        </button>
+        <div class="collapse" id="replyBox{{comment.sno}}">
+          <div class="card card-body my-2">
+            <form action="/blog/postComment" method="post">
+              {% csrf_token %}
+              <div class="form-group">
+                <label for="comment">Post Reply</label>
+                <input type="text" class="form-control" name="comment" placeholder="Enter reply here">
+                <input type="hidden" name="parentSno" value="{{comment.sno}}">
+              </div>
+              <input type="hidden" name="postSno" value="{{post.sno}}">
+              <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+          </div>
+        </div>
+        {% else %}
+        <button class="btn btn-primary btn-sm mt-2" type="button" data-toggle="collapse"
+          data-target="#replyBox{{comment.sno}}" aria-expanded="false"
+          aria-controls="replyBox{{comment.sno}} disabled">Login to Reply</button>
+        {% endif %}
+        <div class="replies my-2">
+          {% for reply in replyDict|get_val:comment.sno %}  <!--  "get_val" is custom template filter -->
+          <div class="row">
+            <div class="col-md-1">
+              <img class=" mx-auto d-block w-100 p-2" src="/static/img/user.png" alt="user">
+            </div>
+            <div class="col-md-11">
+              <b>{{reply.user.username}}</b> <span class="badge badge-secondary" style="font-size: 14px;"> {{reply.timestamp | naturaltime}} </span>
+              <div> {{reply.comment}}</div>
+            </div>
+          </div> 
+          <br>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+  <!-- col-md-2 means that in rows there are 12 grid so out of 12 grid use 2 grid  -->
+</div>
+{% endblock body %}
